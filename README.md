@@ -159,6 +159,8 @@ If the Virtual Network is not public, it is probably because you asign a "Basic 
 
 <img src="./static/lb-backend-pool.png" width="800" />
 
+<img src="./static/done.png" width="800" />
+
 <img src="./static/star4.png" width="800" />
 
 ## Success!!!
