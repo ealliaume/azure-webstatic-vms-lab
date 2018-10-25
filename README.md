@@ -13,7 +13,7 @@ At the end of the lab you will be able to:
 This lab should take approximately 45 minutes.
 You will need to use your own azure cloud account.
 
-<img src="./static/start1.png" width="500" />
+<img src="./static/star1.png" width="500" />
 
 ## The Lab - step by step
 
@@ -28,7 +28,7 @@ One benefit of using RGs in Azure is grouping related resources that belong to a
   * Resource Group Location: Australia Southeast
 
 
-<img src="./static/start2.png" width="500" />
+<img src="./static/star2.png" width="500" />
 
 ### 2. Host a static website using Azure Blob Storage
 
@@ -64,7 +64,7 @@ If you try to remove the "index.html" from the URL, a ResourceNotFound error wil
   * Enable the feature, put "index.html" in the Index Document Name field, then copy the primary endpoint and open it in your browser... FLOP! It is not working... When using the web site hosting feature, Azure is creating a new "$web" blob container for you, you can't use an existing one, so let's fix that.
   * Go the this new **$web** blob container created, upload you index.html file in it and then now it is working :)
 
-<img src="./static/start2.png" width="500" />
+<img src="./static/star3.png" width="500" />
 
 ### 2. Create Load Balanced VMs
 
@@ -157,9 +157,9 @@ If the Virtual Network is not public, it is probably because you asign a "Basic 
 * Add a **Load Balancing Rule**
   * All by default, session persistance: None
 
-<img src="./static/lb-backend-pool" width="500" />
+<img src="./static/lb-backend-pool.png" width="500" />
 
-<img src="./static/start3.png" width="500" />
+<img src="./static/start4.png" width="500" />
 
 ## Success!!!
 
