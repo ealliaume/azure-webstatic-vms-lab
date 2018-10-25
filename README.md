@@ -13,6 +13,8 @@ At the end of the lab you will be able to:
 This lab should take approximately 45 minutes.
 You will need to use your own azure cloud account.
 
+<img src="./static/start1.png" width="500" />
+
 ## The Lab - step by step
 
 ### 1. Create an Azure Resource Group
@@ -25,6 +27,8 @@ One benefit of using RGs in Azure is grouping related resources that belong to a
   * Subscription: Pay-As-You-Go
   * Resource Group Location: Australia Southeast
 
+
+<img src="./static/start2.png" width="500" />
 
 ### 2. Host a static website using Azure Blob Storage
 
@@ -60,124 +64,102 @@ If you try to remove the "index.html" from the URL, a ResourceNotFound error wil
   * Enable the feature, put "index.html" in the Index Document Name field, then copy the primary endpoint and open it in your browser... FLOP! It is not working... When using the web site hosting feature, Azure is creating a new "$web" blob container for you, you can't use an existing one, so let's fix that.
   * Go the this new **$web** blob container created, upload you index.html file in it and then now it is working :)
 
+<img src="./static/start2.png" width="500" />
 
 ### 2. Create Load Balanced VMs
 
-#### Create instance template for Sydney
+Load balancing provides a higher level of availability and scale by spreading incoming requests across multiple virtual machines (VMs).
 
-Instance templates (Compute engine > Instance Templates):
+#### Create the Load Balancer
 
-We will launch our instance from an Instance Template, we will need two of these because there are two bootstrap actions (one to set up the sydney instance, and one for belgium)
+Azure Load Balancer is available in two SKUs: Basic and Standard.
+Not clear enough? I do Agree.
 
-* 1 CPU (default)
-* Debian (default)
-* Firewall > Allow HTTP Traffic
-* Startup script (Automation > Startup script): `wget https://storage.googleapis.com/era-boot/frontend-sydney.py
-sudo python frontend-sydney.py &`
-* Leave all other options as default
+**Standard Load Balancer** enables you to scale your applications and create high availability for small scale deployments to large and complex multi-zone architectures.
+But so does the Basic one :)
 
-#### Create the second instance template for Belgium using “copy”
+The [documentation says](https://docs.microsoft.com/en-us/azure/load-balancer/load-balancer-standard-overview): "New designs should adopt Standard Load Balancer". So let's create a standard one.
 
-Click on the template and then use the 'copy' option from the toolbar, this will load the previous selections. Then just change the startup script as below.
+There are differences in scale, features, and pricing.
 
-`wget https://storage.googleapis.com/era-boot/frontend-belgium.py
- sudo python frontend-belgium.py &`
+* Create a Basic Load Balancer (Azure Menu > Load Balancer), then **+ Add**
+  * Give it a name: lb1
+  * Type: Public
+  * SKU: Standard
+  * Create a NEW IP Address and give it a name "lb1-ip"
+  * Availability Zone, you can only choose "Zone-redundant" for this SKU
+  * Select the "azure-lab" resource group we created during the step 1
+  * And click "Create"
 
-#### Create instance Group for Sydney
+#### Create a Virtual Network
 
-Instance Groups (Compute Engine > Instance Groups)
+Next step is to create a **Virtual Network**.
 
-Create an instance group with the following settings (leave as default those not mentioned)
+Azure Virtual Network enables Virtual Machines (VM) to securely communicate with each other.
+It is the equivalent of AWS VPC.
 
-* Single Zone
-* Region: Sydney
-* Select the correct instance template
-* Autoscaling: ON
-* Autoscaling: CPU usage!
-* Healthchecks: create a new healthcheck, Protocol:  HTTP 80, Health critieria: 5 5 2 2
-* Initial Delay: 120s
-
-#### Create Client Instance Syd
-
-Click on instance template > create VM to create a new VM from the template
-The point of creating client instances is to be able to ssh in to these clients and call the backend service from each of these two regions.
-
-* Name: era-client-syd
-* Machine type: Micro
-* Region: Sydney
-* Allow HTTP traffic
+* Create a new  **Virtual Network**. (Azure Menu > Virtual Network), then **+ Add**
+  * Give it a name: lb-network
+  * Keep the default Address space: 10.1.0.0/16
+  * Link in to the Resource Group "azure-lab"
 
 
-#### Create Client Instance Belgium
+#### Create a Virtual Machines
 
-* Name: era-client-bel
-* Machine type: Micro
-* Region: Belgium
-* Allow HTTP traffic
+Create 2 instances or more, we will use them to create a **backend address pool** for the load balancer.
 
-#### SSH on both Client instance using interface
+* Create VMs (Azure Menu > Virtual machines), then **+ Add**
+  * Link it to the Resource Group "azure-lab"
+  * Name: vm1
+  * Image: CentOS 7.5
+  * Size: B1ms
+  * Username: octo
+  * Ssh key: copy paste the content of your public key: ~/.ssh/id_rsa.pub
+  * Inbound port rules: HTTP, SSH
+  * Disk: Standard SSD
+  * Network: choose the Virtual Network we just created
+  * Then Create the Instance
 
-(VM Instances > Connect > SSH)
+* Install a web server on it
+  * Click on connect to the instance
+  * Switch as root: sudo -s
+  * Install httpd: yum install httpd
+  * Start the service: service httpd start
+  * Create a index.html page: echo "Hello $HOSTNAME" > /var/www/html/index.html
+  * Check everything is working by access http://&lt;Vm1IPAddress>/
 
-* Curl internal IP of instance group
-  * curl http://10.152.0.2/
-  
-You should see 'Hello from Sydney' and 'Bonjour from Europe' from the different instances
+* Dissociate the Basic Public IP for the instance to be usable within a LB
+  * Azure Console > All Services > Public IP Addresses
+  * Dissociate Option on the rigth or the vm1-ip address
 
-### 3. Set up Load Balancers
+* Create and configure a 2nd instance "vm2" exactly the same way
 
-#### Create HTTP Load Balancer
+#### Create a Backend Pool
 
-(Network services > Load Balancer)
+To distribute traffic to the VMs, a backend pool contains the IP addresses of the VMs.
+Let's create a backend pool with our 2 VMs vm1 and vm2.
 
-* Create a http load balancer and assign a name.
+* Create the **Backend Pool**
+  * Go back to your Load Balancer, click on it, then **Backend pools**
+  * Click **+ Add**
+  * Give it a name: lb1-pool1
+  * Select the virtual network and the 2 VMs we just created
 
-* Create a backend service and assign the details of your instance group.
-  * Add healthcheck group
-  * Add instance group
-  * Set CPU utilisation to 60%
+If the Virtual Network is not public, it is probably because you asign a "Basic IP Address" instead a "Standard IP Address".
 
-* Don't add anything for Host and Path Rules
+* Create an **Health Probe**
+  * Name: port80
+  * Protocol: TCP
+  * Port: 80
+  * Interval: 5 secondes
+  * Unhealthly threshold: 2 consecutives failures
 
-* Create Frontend configuration
-  * Era-front-1
-  * Http
-  * Ip v4
-  
-Review, finalise and create. This will take about 5 minutes!
+* Add a **Load Balancing Rule**
+  * All by default, session persistance: None
 
-Check the load balancer has been created (swap with your IP):
-`curl http://35.241.43.206/`
+<img src="./static/lb-backend-pool" width="500" />
 
-#### Check Monitoring Group > Monitoring Tab
-
-### 4. Autoscale!
-
-#### Play with Autoscaling
-
-Do this with the following command (change IP address):
-
-* Then raise the CPU from local shell
-* `while true; do curl http://35.241.43.206/service ; done`
-* Check monitoring  => menu instances
-* Then kill bash loop
-* Wait for the cluster to calm down
-
-#### Create instance group for Belgium
-
-* Simple Zone
-* Region: Belgium
-* Select good instance template
-* Autoscaling: ON
-* Autoscaling: CPU usage!
-* Healthchecks:   era-hc    HTTP 80   /   5 5 2 2
-* Initial Delay: 120s
-
-#### Add the new Instance Group to the Load Balancer
-
-`gcloud compute backend-services add-backend era-backend-bel-42 --instance-group=era-ig-bel --region=europe-west1`
-
-* You now have 1 Load balancer service with 2 backends!
+<img src="./static/start3.png" width="500" />
 
 ## Success!!!
 
