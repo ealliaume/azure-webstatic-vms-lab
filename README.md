@@ -64,9 +64,11 @@ If you try to remove the "index.html" from the URL, a ResourceNotFound error wil
   * Enable the feature, put "index.html" in the Index Document Name field, then copy the primary endpoint and open it in your browser... FLOP! It is not working... When using the web site hosting feature, Azure is creating a new "$web" blob container for you, you can't use an existing one, so let's fix that.
   * Go the this new **$web** blob container created, upload you index.html file in it and then now it is working :)
 
+<img src="./static/static.png" width="800" />
+
 <img src="./static/star3.png" width="800" />
 
-### 2. Create Load Balanced VMs
+### 3. Create Load Balanced VMs
 
 Load balancing provides a higher level of availability and scale by spreading incoming requests across multiple virtual machines (VMs).
 
@@ -163,8 +165,18 @@ If the Virtual Network is not public, it is probably because you asign a "Basic 
 
 <img src="./static/star4.png" width="800" />
 
-## Success!!!
 
-Be sure to delete all resources used!
+### 4. Delete all your resources
+
+Because you created a resources group it is easy.
+
+* Go on the Resources Group Pages (Azure Menu > Resource Groups)
+* Use "Delete Resource Group Option"
+
+Et voila :)
+
+<img src="./static/delete.png" width="800" />
+
+## Success!!!
 
 <img src="./static/success.gif" width="500" />
